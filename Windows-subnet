@@ -1,0 +1,236 @@
+### Provider configuration
+provider "aws" {
+	region = "${var.region}"
+}
+
+terraform {
+  backend "s3" {
+    bucket = "vi-modeln-config"
+    key    = "terraform/Client_{{customer}}_{{region}}_{{group}}_{{envNumber}}"
+    region = "{{region}}"
+  }
+}
+
+### Variables
+variable region { default = "{{region}}"  }
+variable customer { default = "{{customer}}"}
+variable group { default = "{{group}}"}
+variable appCidr { default = "{{appCidr}}"}
+variable dbCidr { default = "{{dbCidr}}"}
+variable vpcID { default = "{{vpcID}}"}
+variable "default_tags" {
+  type = "map"
+  default = {
+    Customer = "{{customer}}"
+    Group = "{{group}}"
+    envUniqueID = "Client_{{customer}}_{{region}}_{{group}}_{{envNumber}}"
+    Comments = "{{comment}}. Generated with terraform"
+  }
+}
+
+
+
+### DataSources
+data "aws_nat_gateway" "default" {
+  vpc_id = "${var.vpcID}"
+  filter  = {
+    name = "tag:VPC"
+    values = ["${var.vpcID}"]
+  }
+}
+
+data "aws_vpc_peering_connection" "Peering-to-Flex-VPC" {
+  cidr_block = "10.103.0.0/16"
+}
+### Subnets
+resource "aws_subnet" "app" {
+  vpc_id = "${var.vpcID}"
+  cidr_block = "${var.appCidr}"
+  map_public_ip_on_launch = false
+  tags = "${merge(var.default_tags, map("Name","Client_{{customer}}_{{group}}_{{envNumber}}-APP"))}"
+}
+
+resource "aws_subnet" "db" {
+  vpc_id = "${var.vpcID}"
+  cidr_block = "${var.dbCidr}"
+  availability_zone = "${aws_subnet.app.availability_zone}"
+  map_public_ip_on_launch = false
+  tags = "${merge(var.default_tags, map("Name","Client_{{customer}}_{{group}}_{{envNumber}}-DB"))}"
+}
+
+
+
+# Routes
+resource "aws_route_table" "routeTable"{
+  vpc_id = "${var.vpcID}"
+  tags = "${merge(var.default_tags, map("Name","RT-{{customer}}_{{group}}_{{envNumber}}"))}"
+}
+resource "aws_route" "1" {
+  route_table_id = "${aws_route_table.routeTable.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id = "${data.aws_nat_gateway.default.id}"
+}
+resource "aws_route" "2" {
+  route_table_id = "${aws_route_table.routeTable.id}"
+  destination_cidr_block = "10.103.0.0/16"
+  vpc_peering_connection_id = "${data.aws_vpc_peering_connection.Peering-to-Flex-VPC.id}"
+}
+resource "aws_route_table_association" "app" {
+  subnet_id      = "${aws_subnet.app.id}"
+  route_table_id = "${aws_route_table.routeTable.id}"
+}
+resource "aws_route_table_association" "db" {
+  subnet_id      = "${aws_subnet.db.id}"
+  route_table_id = "${aws_route_table.routeTable.id}"
+}
+
+
+### NACLs
+resource "aws_network_acl" "app" {
+  vpc_id = "${var.vpcID}"
+  subnet_ids = ["${aws_subnet.app.id}"]
+}
+resource "aws_network_acl_rule" "egressApp100"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 100
+  egress = true
+  protocol = "-1"
+  cidr_block = "0.0.0.0/0"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressApp100"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 100
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.103.0.0/23"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressApp200"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 200
+  egress = false
+  protocol = "-1"
+  cidr_block = "${aws_subnet.db.cidr_block}"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressApp300"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 300
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.103.4.0/28"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressApp400"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 400
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.103.5.0/24"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressApp500"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 500
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.103.6.0/24"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressApp501"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 501
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.160.0.0/24"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressApp600"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 600
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.0.0.0/8"
+  rule_action = "deny"
+}
+resource "aws_network_acl_rule" "ingressApp700"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 700
+  egress = false
+  protocol = "-1"
+  cidr_block = "0.0.0.0/0"
+  rule_action = "allow"
+}
+
+resource "aws_network_acl" "db" {
+  vpc_id = "${var.vpcID}"
+  subnet_ids = ["${aws_subnet.db.id}"]
+}
+resource "aws_network_acl_rule" "egressDB100"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 100
+  egress = true
+  protocol = "-1"
+  cidr_block = "0.0.0.0/0"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressDB100"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 100
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.103.0.0/23"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressDB200"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 200
+  egress = false
+  protocol = "tcp"
+  from_port = 1521
+  to_port = 1521
+  cidr_block = "${aws_subnet.app.cidr_block}"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressDB300"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 300
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.103.4.0/28"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressDB400"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number =400
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.160.0.0/24"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "ingressDB600"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 600
+  egress = false
+  protocol = "-1"
+  cidr_block = "10.0.0.0/8"
+  rule_action = "deny"
+}
+resource "aws_network_acl_rule" "ingressDB700"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 700
+  egress = false
+  protocol = "-1"
+  cidr_block = "0.0.0.0/0"
+  rule_action = "allow"
+}
+
+
+output "provisioned_resources" {
+  value = <<RESOURCES
+  Next subnets were generated with terraform for new ${var.customer} ${var.group} environment :
+  Application subnet - Client_{{customer}}_{{group}}_{{envNumber}}-APP ${aws_subnet.app.id}
+  Database subnet - Client_{{customer}}_{{group}}_{{envNumber}}-DB ${aws_subnet.db.id}
+  RESOURCES
+}
