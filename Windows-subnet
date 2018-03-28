@@ -105,6 +105,15 @@ resource "aws_network_acl_rule" "ingressApp100"{
   protocol = "-1"
   cidr_block = "10.103.0.0/23"
   rule_action = "allow"
+ }
+resource "aws_network_acl_rule" "ingressApp101"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 101
+  egress = false
+  protocol = "TCP"
+  port = 3389
+  cidr_block = "10.103.0.0/23"
+  rule_action = "allow"
 }
 resource "aws_network_acl_rule" "ingressApp200"{
   network_acl_id = "${aws_network_acl.app.id}"
@@ -182,14 +191,34 @@ resource "aws_network_acl_rule" "ingressDB100"{
   protocol = "-1"
   cidr_block = "10.103.0.0/23"
   rule_action = "allow"
+ }
+resource "aws_network_acl_rule" "ingressDB101"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 101
+  egress = false
+  protocol = "tcp"
+  port = 3389
+  cidr_block = "10.103.0.0/23"
+  rule_action = "allow"
 }
 resource "aws_network_acl_rule" "ingressDB200"{
   network_acl_id = "${aws_network_acl.db.id}"
   rule_number = 200
   egress = false
   protocol = "tcp"
-  from_port = 1521
-  to_port = 1521
+  from_port = 1433
+  to_port = 1433
+  cidr_block = "${aws_subnet.app.cidr_block}"
+  rule_action = "allow"
+  
+ }
+resource "aws_network_acl_rule" "ingressDB201"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 201
+  egress = false
+  protocol = "tcp"
+  from_port = 3389
+  to_port = 3389
   cidr_block = "${aws_subnet.app.cidr_block}"
   rule_action = "allow"
 }
@@ -200,22 +229,6 @@ resource "aws_network_acl_rule" "ingressDB300"{
   protocol = "-1"
   cidr_block = "10.103.4.0/28"
   rule_action = "allow"
-}
-resource "aws_network_acl_rule" "ingressDB400"{
-  network_acl_id = "${aws_network_acl.db.id}"
-  rule_number =400
-  egress = false
-  protocol = "-1"
-  cidr_block = "10.160.0.0/24"
-  rule_action = "allow"
-}
-resource "aws_network_acl_rule" "ingressDB600"{
-  network_acl_id = "${aws_network_acl.db.id}"
-  rule_number = 600
-  egress = false
-  protocol = "-1"
-  cidr_block = "10.0.0.0/8"
-  rule_action = "deny"
 }
 resource "aws_network_acl_rule" "ingressDB700"{
   network_acl_id = "${aws_network_acl.db.id}"
