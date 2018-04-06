@@ -181,6 +181,14 @@ resource "aws_network_acl_rule" "egressDB200"{
   cidr_block = "${aws_network_acl.app.id}"
   rule_action = "allow"
 }
+resource "aws_network_acl_rule" "egressDB300"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 300
+  egress = true
+  protocol = "-1"
+  cidr_block = "10.103.0.0/23"
+  rule_action = "allow"
+}
 resource "aws_network_acl_rule" "ingressDB100"{
   network_acl_id = "${aws_network_acl.db.id}"
   rule_number = 100
@@ -219,7 +227,6 @@ resource "aws_network_acl_rule" "ingressDB300"{
   cidr_block = "0.0.0.0/0"
   rule_action = "allow"
 }
-
 
 output "provisioned_resources" {
   value = <<RESOURCES
