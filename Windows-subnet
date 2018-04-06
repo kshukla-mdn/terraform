@@ -94,8 +94,38 @@ resource "aws_network_acl_rule" "egressApp100"{
   network_acl_id = "${aws_network_acl.app.id}"
   rule_number = 100
   egress = true
-  protocol = "-1"
+  protocol = "6"
+  from_port = 443
+  to_port = 443
   cidr_block = "0.0.0.0/0"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "egressApp200"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 200
+  egress = true
+  protocol = "6"
+  from_port = 1443
+  to_port = 1443
+  cidr_block = "${aws_network_acl.db.id}"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "egressApp300"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 300
+  egress = true
+  protocol = "6"
+  from_port = 49152
+  to_port = 65535
+  cidr_block = "0.0.0.0/0"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "egressApp400"{
+  network_acl_id = "${aws_network_acl.app.id}"
+  rule_number = 400
+  egress = true
+  protocol = "-1"
+  cidr_block = "10.103.0.0/23"
   rule_action = "allow"
 }
 resource "aws_network_acl_rule" "ingressApp100"{
@@ -106,68 +136,23 @@ resource "aws_network_acl_rule" "ingressApp100"{
   cidr_block = "10.103.0.0/23"
   rule_action = "allow"
  }
-resource "aws_network_acl_rule" "ingressApp101"{
-  network_acl_id = "${aws_network_acl.app.id}"
-  rule_number = 101
-  egress = false
-  protocol = "TCP"
-  port = 3389
-  cidr_block = "10.103.0.0/23"
-  rule_action = "allow"
-}
 resource "aws_network_acl_rule" "ingressApp200"{
   network_acl_id = "${aws_network_acl.app.id}"
   rule_number = 200
   egress = false
-  protocol = "-1"
-  cidr_block = "${aws_subnet.db.cidr_block}"
+  protocol = "6"
+  from_port = 443
+  to_port = 443
+  cidr_block = 0.0.0.0/0
   rule_action = "allow"
 }
 resource "aws_network_acl_rule" "ingressApp300"{
   network_acl_id = "${aws_network_acl.app.id}"
   rule_number = 300
   egress = false
-  protocol = "-1"
-  cidr_block = "10.103.4.0/28"
-  rule_action = "allow"
-}
-resource "aws_network_acl_rule" "ingressApp400"{
-  network_acl_id = "${aws_network_acl.app.id}"
-  rule_number = 400
-  egress = false
-  protocol = "-1"
-  cidr_block = "10.103.5.0/24"
-  rule_action = "allow"
-}
-resource "aws_network_acl_rule" "ingressApp500"{
-  network_acl_id = "${aws_network_acl.app.id}"
-  rule_number = 500
-  egress = false
-  protocol = "-1"
-  cidr_block = "10.103.6.0/24"
-  rule_action = "allow"
-}
-resource "aws_network_acl_rule" "ingressApp501"{
-  network_acl_id = "${aws_network_acl.app.id}"
-  rule_number = 501
-  egress = false
-  protocol = "-1"
-  cidr_block = "10.160.0.0/24"
-  rule_action = "allow"
-}
-resource "aws_network_acl_rule" "ingressApp600"{
-  network_acl_id = "${aws_network_acl.app.id}"
-  rule_number = 600
-  egress = false
-  protocol = "-1"
-  cidr_block = "10.0.0.0/8"
-  rule_action = "deny"
-}
-resource "aws_network_acl_rule" "ingressApp700"{
-  network_acl_id = "${aws_network_acl.app.id}"
-  rule_number = 700
-  egress = false
-  protocol = "-1"
+  protocol = "6"
+  from_port = 49152
+  to_port = 65535
   cidr_block = "0.0.0.0/0"
   rule_action = "allow"
 }
@@ -180,8 +165,20 @@ resource "aws_network_acl_rule" "egressDB100"{
   network_acl_id = "${aws_network_acl.db.id}"
   rule_number = 100
   egress = true
-  protocol = "-1"
+  protocol = "6"
+  from_port = 443
+  to_port = 443
   cidr_block = "0.0.0.0/0"
+  rule_action = "allow"
+}
+resource "aws_network_acl_rule" "egressDB200"{
+  network_acl_id = "${aws_network_acl.db.id}"
+  rule_number = 200
+  egress = true
+  protocol = "6"
+  from_port = 49152
+  to_port = 65535
+  cidr_block = "${aws_network_acl.app.id}"
   rule_action = "allow"
 }
 resource "aws_network_acl_rule" "ingressDB100"{
@@ -192,31 +189,21 @@ resource "aws_network_acl_rule" "ingressDB100"{
   cidr_block = "10.103.0.0/23"
   rule_action = "allow"
  }
-resource "aws_network_acl_rule" "ingressDB101"{
-  network_acl_id = "${aws_network_acl.db.id}"
-  rule_number = 101
-  egress = false
-  protocol = "tcp"
-  port = 3389
-  cidr_block = "10.103.0.0/23"
-  rule_action = "allow"
-}
 resource "aws_network_acl_rule" "ingressDB200"{
   network_acl_id = "${aws_network_acl.db.id}"
   rule_number = 200
   egress = false
-  protocol = "tcp"
+  protocol = "6"
   from_port = 1433
   to_port = 1433
   cidr_block = "${aws_subnet.app.cidr_block}"
   rule_action = "allow"
-  
- }
-resource "aws_network_acl_rule" "ingressDB201"{
+   }
+resource "aws_network_acl_rule" "ingressDB210"{
   network_acl_id = "${aws_network_acl.db.id}"
-  rule_number = 201
+  rule_number = 210
   egress = false
-  protocol = "tcp"
+  protocol = "6"
   from_port = 3389
   to_port = 3389
   cidr_block = "${aws_subnet.app.cidr_block}"
@@ -226,15 +213,9 @@ resource "aws_network_acl_rule" "ingressDB300"{
   network_acl_id = "${aws_network_acl.db.id}"
   rule_number = 300
   egress = false
-  protocol = "-1"
-  cidr_block = "10.103.4.0/28"
-  rule_action = "allow"
-}
-resource "aws_network_acl_rule" "ingressDB700"{
-  network_acl_id = "${aws_network_acl.db.id}"
-  rule_number = 700
-  egress = false
-  protocol = "-1"
+  protocol = "6"
+  from_port = 1024
+  to_port = 65535
   cidr_block = "0.0.0.0/0"
   rule_action = "allow"
 }
